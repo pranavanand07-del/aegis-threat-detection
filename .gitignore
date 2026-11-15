@@ -1,0 +1,29 @@
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+**/api-key.txt
+**/secrets/
+**/secrets.*
+**/*credentials*
+
+# Runtime data and logs
+aegis-data/
+**/aegis-data/
+*.log
+logs/
+
+# Java build output
+out/
+target/
+build/
+*.class
+
+# Dependencies
+node_modules/
+
+# IDE and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

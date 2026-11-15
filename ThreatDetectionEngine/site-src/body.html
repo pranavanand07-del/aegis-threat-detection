@@ -1,0 +1,344 @@
+<div class="banner" id="offline" role="alert">The engine is not reachable. Start it with <code>java -cp out com.threatdetection.Main</code> and reload this page.</div>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="AEGIS home">
+      <svg width="22" height="24" viewBox="0 0 22 24" aria-hidden="true"><path d="M11 1.5 20 5v7.2c0 5.2-3.7 9-9 10.8C5.7 21.200 2 17.400 2 12.200V5z" fill="none" stroke="#0C1A28" stroke-width="2" stroke-linejoin="round"/><path d="M6 13h10" stroke="#0B6E75" stroke-width="2"/><path d="M12.500 9v8" stroke="#0C1A28" stroke-width="2"/></svg>
+      AEGIS
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#why">Why</a><a href="#logic">How it decides</a><a href="#rules">Rules</a><a href="#campaigns">Campaigns</a><a href="#lab">Attack lab</a><a href="#live">Live</a><a href="#proof">Proof</a><a href="#impact">Run it</a>
+    </nav>
+    <span class="pill status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Connecting</span></span>
+    <a class="btn sm alt" href="/aegis">SOC console</a>
+    <a class="btn sm alt" href="/map">Threat map</a>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Every request gets a score. Every score shows its reasons.</h1>
+      <p class="lead">AEGIS reads web logs, firewall logs and Windows events, adds up the evidence from <span id="ruleCount">36</span> detection rules, and blocks an address only when the evidence is strong. Then it links the steps of an attack together, so a slow and quiet intruder is still caught.</p>
+      <div class="cta">
+        <a class="btn" href="#lab">Launch an attack</a>
+        <a class="btn alt" href="#logic">See how it decides</a>
+      </div>
+      <div class="proof-row">
+        <span><b id="heroCases">&ndash;</b> verification cases pass</span>
+        <span><b>5</b> data sources</span>
+        <span><b>0</b> cloud calls, <b>0</b> API keys</span>
+      </div>
+    </div>
+    <div class="inst" aria-live="polite">
+      <div class="inst-h"><b>Latest decision</b><span class="sp"></span><span id="heroWhen">waiting for traffic</span></div>
+      <div class="inst-b" id="hero"><div class="empty">Waiting for traffic. The built-in simulator produces events every second or so.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="why">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Why a simple rule checker is not enough</h2></div>
+      <p>Most student projects stop at &ldquo;if failed logins &gt; 5 then block&rdquo;. That is easy to dodge and impossible to explain. AEGIS is built around two questions a security analyst actually asks: <em>why was this flagged?</em> and <em>is this one step of something bigger?</em></p>
+    </div>
+    <div class="tbl-wrap">
+      <table class="t">
+        <thead><tr><th></th><th>Single-rule checker</th><th>AEGIS</th></tr></thead>
+        <tbody>
+          <tr><td class="k">How it decides</td><td>One rule fires, then block or ignore.</td><td class="us">Points from many independent rules are added into one score. The block line is 101.</td></tr>
+          <tr><td class="k">Explanation</td><td>&ldquo;Blocked by rule 7.&rdquo;</td><td class="us">Every event lists each rule, its points and the evidence it saw.</td></tr>
+          <tr><td class="k">Slow, multi-step attacks</td><td>Each step looks harmless alone, so nothing is caught.</td><td class="us">Steps are linked per attacker across a 5-stage attack chain, with older evidence fading out.</td></tr>
+          <tr><td class="k">Data sources</td><td>One log type.</td><td class="us">Web access logs, firewall logs, Windows Security log, Sysmon, and an HTTP API.</td></tr>
+          <tr><td class="k">Honesty about data</td><td>Demo data and real data are mixed together.</td><td class="us">Every event is labelled Observed, API or Simulated. An unknown reputation is &ldquo;no data&rdquo;, never &ldquo;clean&rdquo;.</td></tr>
+          <tr><td class="k">Proof it works</td><td>&ldquo;Trust me.&rdquo;</td><td class="us">A built-in self-test runs <span id="whyCases">65</span> cases against the live rule code, including documented false positives.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="logic">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>How one event becomes a decision</h2></div>
+      <p>Six steps, each in its own part of the code. Pick a step to see what happens and where to find it. A judge who asks &ldquo;show me the code&rdquo; gets a file name, not a promise.</p>
+    </div>
+    <div class="stepper">
+      <ol class="steps" id="steps" role="tablist" aria-label="Decision steps"></ol>
+      <div class="step-d" id="stepDetail" role="tabpanel"></div>
+    </div>
+
+    <div class="cols" style="margin-top:64px">
+      <div>
+        <h2>The scoring model</h2>
+      </div>
+      <div>
+        <p class="mut">The score is the sum of the points from every rule that fired. Because no single weak signal can reach 101 on its own, one noisy rule cannot block an innocent user. An attacker has to stay under <em>every</em> threshold at once to avoid it.</p>
+        <div class="light" id="bandRuler" style="margin:6px 0 12px"></div>
+        <div class="bandlist" id="bandList"></div>
+      </div>
+    </div>
+
+    <div class="examples" style="margin-top:36px">
+      <div class="ex">
+        <h3>One attack, nothing else</h3>
+        <div class="sum">+40 <span>SQL_INJECTION</span></div>
+        <div class="light" data-ruler="40"></div>
+        <p>A SQL injection from an ordinary address using a normal browser. Logged and shown, not blocked. Proportionate.</p>
+        <button class="btn sm alt" data-scn="sqli">Run it</button>
+      </div>
+      <div class="ex">
+        <h3>Evidence stacks up</h3>
+        <div class="sum">+50 +15 +40 <span>= 105</span></div>
+        <div class="light" data-ruler="105"></div>
+        <p>The same injection, but from a known-bad address, using the sqlmap tool. Three rules agree, the score passes 100, and the address is blocked for 10 minutes.</p>
+        <button class="btn sm alt" data-scn="scanner">Run it</button>
+      </div>
+      <div class="ex">
+        <h3>Password guessing</h3>
+        <div class="sum">10 + 7 &times; 5 <span>= 45</span></div>
+        <div class="light" data-ruler="45"></div>
+        <p>Twelve failed logins in two minutes. Points grow with each attempt but stop at 50, so guessing alone never blocks. That gap is exactly what the campaign view below closes.</p>
+        <button class="btn sm alt" data-scn="guess">Run it</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="rules">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Every rule, with its limits</h2></div>
+      <p>All <span id="ruleCount2">36</span> rules in one table: when each fires, how many points it adds, where it sits in the attack chain, and the closest MITRE ATT&amp;CK technique. The last column says where the rule can be wrong. We list that ourselves because a judge will ask.</p>
+    </div>
+    <div class="filters">
+      <input type="search" id="rq" placeholder="Search rules, e.g. powershell, T1110, port" aria-label="Search rules">
+      <select id="ro" aria-label="Filter by origin"><option value="">All origins</option><option value="core">Core detectors</option><option value="aegis">AEGIS rules</option></select>
+      <select id="rs" aria-label="Filter by attack stage"><option value="">All stages</option></select>
+      <select id="rf" aria-label="Filter by family"><option value="">All families</option></select>
+      <span class="mut small" id="rcount"></span>
+    </div>
+    <div class="tbl-wrap scroll-y">
+      <table class="t compact" id="ruleTable">
+        <thead><tr><th>Rule</th><th>Fires when</th><th>Points</th><th>Chain stage</th><th>MITRE ATT&amp;CK</th><th>Where it can be wrong</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="campaigns">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Catching what a per-event score misses</h2></div>
+      <p>The engine scores each event alone, so an attacker who spreads the steps out can stay below the block line every single time. The campaign view looks at everything one address has done and asks how far along the attack chain it has got.</p>
+    </div>
+    <div class="chain" id="chain"></div>
+    <div class="cols even">
+      <div class="formula">
+        <h3 style="margin-bottom:10px">How campaign risk is calculated</h3>
+        <ol>
+          <li>Collect the distinct rules this address has triggered.</li>
+          <li>Weight each: its strongest points, times a repeat bonus (up to &times;2), times a recency factor that halves every <span id="halfLife">10</span> minutes.</li>
+          <li>Add <span id="stageBonus">15</span> for every extra chain stage reached.</li>
+          <li>Below <span id="escAt">80</span> keep watching. From <span id="escAt2">80</span> escalate. From <span id="blkAt">150</span> a block is recommended.</li>
+        </ol>
+<div class="eq">evidence(rule) = strongest points x repeat(n) x 0.5 ^ (age / 10 min)
+repeat(n)     = min(2, 1 + 0.1 x (n - 1))
+risk          = sum of evidence + 15 x (stages reached - 1)</div>
+      </div>
+      <div>
+        <div class="note info"><b>Advisory by design.</b> Campaign risk does not block anything yet, so the original engine behaves exactly as before. Wiring it into the response step is the first item on the roadmap.</div>
+        <p class="mut small">Why these numbers: the repeat bonus makes persistence count, because ten SQL injections are worse than one. The decay stops a quiet address from being punished for something it did an hour ago. The stage bonus rewards progress along the chain, which is what separates a campaign from noise.</p>
+      </div>
+    </div>
+    <h3 style="margin:36px 0 12px">Campaigns right now <span class="mut small" style="font-weight:400">&mdash; last hour, live</span></h3>
+    <div class="tbl-wrap scroll-y">
+      <table class="t compact" id="campTable">
+        <thead><tr><th>Address</th><th>Chain</th><th>Risk</th><th>Verdict</th><th>Original engine</th><th>Strongest evidence</th></tr></thead>
+        <tbody><tr><td colspan="6" class="mut">Loading&hellip;</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="s tight" id="lab" style="background:#E5EBF1">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Attack lab</h2></div>
+      <p>Fire a real attack at the real engine and watch it decide. Each step goes through the same pipeline as live traffic, from a random test address, and is labelled <span class="src API" style="background:#fff">API</span> on the dashboards. Start with the quiet intrusion: no single step is blocked, but the campaign view sees all five stages.</p>
+    </div>
+    <div class="lab dark">
+      <div class="lab-side">
+        <h3>Scenarios</h3>
+        <div id="scList"></div>
+        <details class="custom">
+          <summary>Custom event</summary>
+          <div class="fld">
+            <div><label for="cKind">Type</label><select id="cKind">
+              <option value="web">Web request</option><option value="auth_fail">Failed login</option><option value="auth_ok">Successful login</option>
+              <option value="port">Port probe</option><option value="download">File download</option><option value="process">Windows process</option><option value="win">Windows event</option></select></div>
+            <div><label for="cA">Path / image / group</label><input id="cA" value="/search"></div>
+            <div><label for="cB">Body / command line</label><input id="cB" value="id=1' OR 1=1 --"></div>
+            <div><label for="cC">Port / event id / file</label><input id="cC" value=""></div>
+          </div>
+          <button class="btn sm on-dark" id="cSend">Send event</button>
+        </details>
+      </div>
+      <div class="lab-main">
+        <div class="lab-bar">
+          <span class="mut small">Actor</span><span class="ip" id="labIp">&ndash;</span>
+          <span class="sp"></span>
+          <button class="btn sm on-dark" id="labRun" disabled>Run scenario</button>
+          <button class="btn sm ghost-dark" id="labStop" disabled>Stop</button>
+          <button class="btn sm ghost-dark" id="labNew">New address</button>
+        </div>
+        <div class="lab-top">
+          <div><h4>Selected event</h4><div id="labEvent"><div class="empty">Choose a scenario and press Run.</div></div></div>
+          <div><h4>This actor across the attack chain</h4><div id="labChain"><div class="empty">The chain fills in as steps arrive.</div></div></div>
+        </div>
+        <div class="log" id="labLog"></div>
+        <div class="final" id="labFinal" hidden></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s dark" id="live">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Live operations</h2></div>
+      <p>Everything here is read from the running engine, refreshed every few seconds. The built-in simulator keeps traffic flowing, and every event carries its source label so demo traffic is never mistaken for real telemetry.</p>
+    </div>
+    <div class="filters" style="margin-bottom:14px">
+      <label class="small mut" for="range">Time range</label>
+      <select id="range" style="background:#0b1826;border-color:var(--conline);color:var(--context)">
+        <option value="15">Last 15 minutes</option><option value="60" selected>Last hour</option><option value="360">Last 6 hours</option><option value="1440">Last 24 hours</option><option value="0">Everything stored</option>
+      </select>
+      <span class="sp" style="flex:1"></span>
+      <a class="btn sm ghost-dark" href="/aegis">Open full SOC console</a>
+      <a class="btn sm ghost-dark" href="/map">Open threat map</a>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="live-grid">
+      <div class="panel">
+        <h3>Alerts over time <span class="sp"></span><span class="tiny" id="chartNote"></span></h3>
+        <canvas class="chart" id="chart" aria-label="Alerts per interval by level, with maximum risk score line" role="img"></canvas>
+        <div class="legend"><span><i style="background:var(--dcrit)"></i>Critical</span><span><i style="background:var(--dhigh)"></i>High</span><span><i style="background:var(--dmed)"></i>Medium</span><span><i style="background:var(--dlow)"></i>Low</span><span><i style="background:#fff;height:2px;vertical-align:3px"></i>Highest score in interval</span></div>
+      </div>
+      <div class="panel">
+        <h3>Most common rules <span class="sp"></span><span class="tiny">by number of different sources</span></h3>
+        <div id="topRules"></div>
+        <h3 style="margin-top:18px">Attack chain coverage <span class="sp"></span><span class="tiny">events touching each stage</span></h3>
+        <div id="stageBars"></div>
+      </div>
+    </div>
+    <div class="live-grid">
+      <div class="panel">
+        <h3>Recent detections <span class="sp"></span><span class="tiny">click a row to see every rule behind the score</span></h3>
+        <div class="feed" id="feed"></div>
+      </div>
+      <div class="panel">
+        <h3>Data sources</h3>
+        <div id="sources"></div>
+        <div class="note info" style="background:#0F2033;color:var(--context);border-left-color:var(--dbrand);margin-bottom:0">
+          <span class="src OBSERVED">Observed</span> read from a real log &nbsp; <span class="src API">API</span> submitted over HTTP, unverified &nbsp; <span class="src SIMULATED">Simulated</span> built-in generators.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="proof">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Proof, and what we do not claim</h2></div>
+      <p>The self-test below runs <em>right now</em> against the real rule code: attacks that must fire, near-misses that must stay quiet, and a few false positives we know about and chose to document.</p>
+    </div>
+    <div class="score-banner">
+      <span class="big" id="stBig">&ndash;</span>
+      <div><b id="stLine">Running verification&hellip;</b><div class="mut small" id="stSub"></div></div>
+      <span style="flex:1"></span>
+      <button class="btn sm alt" id="stRun">Run again</button>
+    </div>
+    <div class="filters">
+      <input type="search" id="stq" placeholder="Filter cases, e.g. SQL, powershell" aria-label="Filter test cases">
+      <select id="stk" aria-label="Filter by case type"><option value="">All case types</option><option value="attack">Attacks that must fire</option><option value="benign">Near-misses that must stay quiet</option><option value="known-limit">Documented false positives</option></select>
+    </div>
+    <div class="tbl-wrap scroll-y" style="max-height:420px">
+      <table class="t compact" id="stTable">
+        <thead><tr><th>Result</th><th>Rule</th><th>Type</th><th>Case</th><th>Input</th><th>Points</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="two" style="margin-top:48px">
+      <div>
+        <h3>What we do not claim</h3>
+        <ul class="lines">
+          <li><b>Locations are estimates.</b> Without a GeoIP database, real events are not plotted at all, and simulated events are drawn hollow.</li>
+          <li><b>Host rules are heuristics.</b> Admin tools can trigger them, which is why they add points rather than block alone.</li>
+          <li><b>Weights are set by hand, not trained.</b> This is a transparent rules engine, not a machine-learning model, and signatures can be evaded by a determined attacker.</li>
+          <li><b>Campaign risk is advisory.</b> It flags and ranks. It does not block yet.</li>
+          <li><b>Three rules are outside the self-test:</b> <span id="stNot">clock, baseline and feed dependent</span>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Known limits, stated up front</h3>
+        <ul class="lines">
+          <li>Impossible-login tracking is per IP address, not per account.</li>
+          <li>The SQL rule matches the text <code>--</code>, so ordinary prose can trigger it.</li>
+          <li>Brute force alone tops out at 50 points by design and never blocks. The campaign view is what escalates it.</li>
+          <li>State lives in memory. A restart clears history unless alert persistence is on.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="impact" style="border-bottom:0">
+  <div class="wrap">
+    <div class="sh">
+      <div><h2>Who it protects, and how to run it</h2></div>
+      <p>Small businesses, clinics, colleges and local government offices run the same servers attackers target, but cannot pay for a SIEM licence or a security team. AEGIS runs on a single Java installation. No cloud account, no API key, and logs never leave the machine.</p>
+    </div>
+    <div class="two">
+      <div>
+        <h3>Run it</h3>
+<pre class="cmd"><i># compile and start (JDK 21, nothing to download)</i>
+javac -d out $(find src -name "*.java")
+java -cp out com.threatdetection.Main
+
+<i># point it at real logs instead of the simulator</i>
+java -Daegis.web.log=/var/log/nginx/access.log \
+     -Daegis.fw.log=/var/log/ufw.log \
+     -cp out com.threatdetection.Main</pre>
+        <p class="mut small">Pages: <a href="/">this site</a>, <a href="/aegis">/aegis</a> SOC console, <a href="/map">/map</a> threat map, <a href="/classic">/classic</a> original dashboard. API: <a href="/api/platform/model">/api/platform/model</a>, <a href="/api/platform/campaigns">/api/platform/campaigns</a>, <a href="/api/platform/selftest">/api/platform/selftest</a>.</p>
+      </div>
+      <div>
+        <h3>Built, and next</h3>
+        <ul class="cl">
+          <li><b><span class="st done">Built</span></b><span><span id="ruleCount3">36</span> rules in two layers, mapped to MITRE ATT&amp;CK</span></li>
+          <li><b><span class="st done">Built</span></b><span>Five log sources, normalised into one event model</span></li>
+          <li><b><span class="st done">Built</span></b><span>Campaign correlation across a five-stage attack chain</span></li>
+          <li><b><span class="st done">Built</span></b><span>Attack lab and a self-test that runs against the live code</span></li>
+          <li><b><span class="st next">Next</span></b><span>Let campaign risk drive the block decision, behind a switch</span></li>
+          <li><b><span class="st next">Next</span></b><span>Impossible-login tracking per account instead of per IP</span></li>
+          <li><b><span class="st next">Next</span></b><span>Database storage (JDBC) and export to SIEM tools in CEF or syslog</span></li>
+          <li><b><span class="st next">Next</span></b><span>Linux auditd and cloud audit logs as new sources</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>AEGIS &mdash; explainable threat detection in plain Java.</span>
+    <span><a href="#top">Back to top</a><a href="/classic">Original dashboard</a></span>
+  </div>
+</footer>
